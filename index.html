@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AstroForge: Super Rocket Engine Builder & Flight</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for futuristic & comic feel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #050714;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .font-hud {
+      font-family: 'Orbitron', monospace;
+    }
+    .font-fun {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+    
+    /* Glowing Animations & Neon Accents */
+    .neon-glow-red {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.7), inset 0 0 15px rgba(239, 68, 68, 0.5);
+    }
+    .neon-glow-cyan {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.2);
+    }
+    .neon-glow-gold {
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+    }
+    .slot-pulse {
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 0 10px rgba(6, 182, 212, 0.2); }
+      50% { border-color: rgba(6, 182, 212, 0.9); box-shadow: 0 0 22px rgba(6, 182, 212, 0.6); }
+    }
+    @keyframes bigRedPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 30px #ef4444; }
+      50% { transform: scale(1.04); box-shadow: 0 0 50px #f87171, 0 0 80px rgba(239,68,68,0.6); }
+    }
+    .red-button-active {
+      animation: bigRedPulse 1.4s infinite ease-in-out;
+    }
+    
+    /* Space Grid Background */
+    .space-grid {
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.2) 0%, transparent 80%),
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+    }
+
+    /* Screen shake for launch */
+    @keyframes shake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      20% { transform: translate(-2px, -2px) rotate(-0.5deg); }
+      40% { transform: translate(2px, -1px) rotate(0.5deg); }
+      60% { transform: translate(-1px, 2px) rotate(0deg); }
+      80% { transform: translate(2px, 1px) rotate(-0.5deg); }
+      100% { transform: translate(0px, 0px) rotate(0deg); }
+    }
+    .shake-active {
+      animation: shake 0.12s infinite ease-in-out;
+    }
+
+    /* Custom Thumb Control Pads */
+    .thumb-btn {
+      touch-action: none;
+      -webkit-touch-callout: none;
+    }
+    .thumb-btn:active {
+      transform: scale(0.92);
+      filter: brightness(1.3);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #06b6d4;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body class="text-slate-100 min-h-screen overflow-x-hidden space-grid flex flex-col justify-between select-none">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900/80 backdrop-blur border-b border-cyan-500/30 px-4 py-3 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/30">
+          🚀
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black font-hud tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-sky-200 to-fuchsia-400">
+            ASTRO-FORGE <span class="text-xs md:text-sm font-fun px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/40">PILOT LAB</span>
+          </h1>
+          <p class="text-xs text-slate-400 tracking-wide">BUILD YOUR MEGA ENGINE & FLY TO 4 SPACE DESTINATIONS</p>
+        </div>
+      </div>
+
+      <!-- Action buttons & audio toggle -->
+      <div class="flex items-center space-x-2">
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:border-cyan-400 text-xs font-hud flex items-center gap-1.5 transition">
+          <span id="audioIcon">🔊</span> <span id="audioText">SFX: ON</span>
+        </button>
+        <button onclick="resetRocket()" class="px-3 py-1.5 rounded-lg bg-rose-950/40 border border-rose-800/60 hover:bg-rose-900/50 text-rose-300 text-xs font-hud transition flex items-center gap-1">
+          🔄 CLEAR
+        </button>
+        <button onclick="autoFillOptimalRocket()" class="px-3 py-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/60 hover:bg-cyan-900/50 text-cyan-300 text-xs font-hud transition flex items-center gap-1">
+          ⚡ AUTO BUILD
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN INTERACTIVE WORKSPACE -->
+  <main class="max-w-7xl mx-auto p-3 md:p-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow">
+    
+    <!-- LEFT PANEL: PARTS DRAWER & ENGINES (4 Cols) -->
+    <section class="lg:col-span-4 flex flex-col bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 backdrop-blur-md shadow-2xl h-[580px] lg:h-[720px]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h2 class="font-hud text-base font-bold text-cyan-400 flex items-center gap-2">
+          <span>🛠️</span> ENGINE BAY & MODULES
+        </h2>
+        <span class="text-[11px] font-hud bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-800">
+          DRAG OR TAP TO SNAP
+        </span>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="grid grid-cols-4 gap-1 py-3" id="categoryTabs">
+        <button onclick="switchCategory('engines')" id="tab-engines" class="category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-cyan-600 text-white font-bold transition shadow-sm">
+          🔥 ENGINES
+        </button>
+        <button onclick="switchCategory('boosters')" id="tab-boosters" class="category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-slate-800 text-slate-400 font-bold hover:text-cyan-300 transition">
+          🚀 BOOSTERS
+        </button>
+        <button onclick="switchCategory('cores')" id="tab-cores" class="category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-slate-800 text-slate-400 font-bold hover:text-cyan-300 transition">
+          ⚡ CORES
+        </button>
+        <button onclick="switchCategory('cockpits')" id="tab-cockpits" class="category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-slate-800 text-slate-400 font-bold hover:text-cyan-300 transition">
+          🛸 CAPSULES
+        </button>
+      </div>
+
+      <!-- Part Cards Shelf (Draggable & Clickable) -->
+      <div id="partsShelf" class="flex-grow overflow-y-auto space-y-3 pr-1">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Quick Hint Bar -->
+      <div class="pt-3 text-center border-t border-slate-800/80">
+        <p class="text-xs text-slate-400 font-fun">💡 <span class="text-cyan-300">Pro Tip:</span> Tap any engine card to mount, then steer with your thumbs when flying!</p>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: ROCKET ASSEMBLY GANTRY (4 Cols) -->
+    <section class="lg:col-span-4 flex flex-col items-center justify-between bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-900/90 border border-slate-700/60 rounded-2xl p-4 relative overflow-hidden h-[580px] lg:h-[720px] shadow-2xl">
+      
+      <!-- Launch Tower BG Graphics -->
+      <div class="absolute inset-0 pointer-events-none opacity-20 flex justify-between px-6">
+        <div class="w-4 h-full border-r border-dashed border-cyan-400"></div>
+        <div class="w-4 h-full border-l border-dashed border-cyan-400"></div>
+      </div>
+
+      <!-- Gantry Header -->
+      <div class="w-full flex items-center justify-between z-10">
+        <span class="font-hud text-xs text-slate-400 tracking-wider">PAD #01: DRY DOCK</span>
+        <div class="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-hud font-bold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          READY FOR FIT
+        </div>
+      </div>
+
+      <!-- Rocket Assembly Structure (6 Snap Dropzones) -->
+      <div class="relative w-full max-w-[310px] flex flex-col items-center justify-center my-auto z-10 py-2">
+
+        <!-- 1. CAPSULE / NOSECONE SLOT -->
+        <div id="slot-cockpit" 
+             ondragover="allowDrop(event)" 
+             ondrop="handleDrop(event, 'cockpit')" 
+             onclick="handleSlotClick('cockpit')"
+             class="w-36 h-20 rounded-t-3xl border-2 border-dashed border-cyan-500/50 bg-slate-900/70 hover:bg-cyan-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group slot-pulse relative">
+          <div id="display-cockpit" class="flex flex-col items-center text-center p-1">
+            <span class="text-2xl group-hover:scale-110 transition">🛰️</span>
+            <span class="text-[11px] font-hud text-cyan-300 font-bold">SLOT 1: CAPSULE</span>
+            <span class="text-[9px] text-slate-400">Drag or click cockpit</span>
+          </div>
+          <button onclick="removePart(event, 'cockpit')" id="btn-del-cockpit" class="hidden absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+        </div>
+
+        <!-- 2. MINING LAB / PAYLOAD MODULE SLOT -->
+        <div id="slot-module" 
+             ondragover="allowDrop(event)" 
+             ondrop="handleDrop(event, 'module')" 
+             onclick="handleSlotClick('module')"
+             class="w-48 h-20 border-2 border-dashed border-cyan-500/50 bg-slate-900/70 hover:bg-cyan-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group mt-1 relative">
+          <div id="display-module" class="flex flex-col items-center text-center p-1">
+            <span class="text-2xl group-hover:scale-110 transition">💎</span>
+            <span class="text-[11px] font-hud text-cyan-300 font-bold">SLOT 2: PAYLOAD & DRILL</span>
+            <span class="text-[9px] text-slate-400">Deep Space Mining Gear</span>
+          </div>
+          <button onclick="removePart(event, 'module')" id="btn-del-module" class="hidden absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+        </div>
+
+        <!-- 3. ENERGY POWER CORE SLOT -->
+        <div id="slot-core" 
+             ondragover="allowDrop(event)" 
+             ondrop="handleDrop(event, 'core')" 
+             onclick="handleSlotClick('core')"
+             class="w-56 h-22 border-2 border-dashed border-cyan-500/50 bg-slate-900/70 hover:bg-cyan-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group mt-1 relative">
+          <div id="display-core" class="flex flex-col items-center text-center p-1">
+            <span class="text-2xl group-hover:scale-110 transition">⚡</span>
+            <span class="text-[11px] font-hud text-cyan-300 font-bold">SLOT 3: REACTOR CORE</span>
+            <span class="text-[9px] text-slate-400">Plasma / Methane / Singularity</span>
+          </div>
+          <button onclick="removePart(event, 'core')" id="btn-del-core" class="hidden absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+        </div>
+
+        <!-- 4, 5 & 6: MAIN ENGINE WITH SIDE BOOSTERS -->
+        <div class="flex items-center justify-center gap-2 mt-1 w-full">
+          
+          <!-- LEFT BOOSTER (Slot 4) -->
+          <div id="slot-boosterLeft" 
+               ondragover="allowDrop(event)" 
+               ondrop="handleDrop(event, 'boosterLeft')" 
+               onclick="handleSlotClick('boosterLeft')"
+               class="w-20 h-32 rounded-l-xl border-2 border-dashed border-cyan-500/50 bg-slate-900/70 hover:bg-cyan-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group relative">
+            <div id="display-boosterLeft" class="flex flex-col items-center text-center p-1">
+              <span class="text-xl">🚀</span>
+              <span class="text-[9px] font-hud text-cyan-300 font-bold">LEFT BOOSTER</span>
+              <span class="text-[8px] text-slate-400">Add Thrust</span>
+            </div>
+            <button onclick="removePart(event, 'boosterLeft')" id="btn-del-boosterLeft" class="hidden absolute -top-2 -left-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+          </div>
+
+          <!-- MAIN ENGINE STAGE (Slot 5 - Primary Big Engine) -->
+          <div id="slot-engine" 
+               ondragover="allowDrop(event)" 
+               ondrop="handleDrop(event, 'engine')" 
+               onclick="handleSlotClick('engine')"
+               class="w-36 h-36 rounded-b-2xl border-2 border-dashed border-amber-500/70 bg-slate-900/80 hover:bg-amber-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group relative shadow-lg">
+            <div id="display-engine" class="flex flex-col items-center text-center p-1">
+              <span class="text-3xl animate-bounce">🔥</span>
+              <span class="text-[11px] font-hud text-amber-400 font-extrabold">SLOT 5: MAIN ENGINE</span>
+              <span class="text-[9px] text-slate-300 font-bold">5-6 Mega Thrusters!</span>
+            </div>
+            <button onclick="removePart(event, 'engine')" id="btn-del-engine" class="hidden absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+          </div>
+
+          <!-- RIGHT BOOSTER (Slot 6) -->
+          <div id="slot-boosterRight" 
+               ondragover="allowDrop(event)" 
+               ondrop="handleDrop(event, 'boosterRight')" 
+               onclick="handleSlotClick('boosterRight')"
+               class="w-20 h-32 rounded-r-xl border-2 border-dashed border-cyan-500/50 bg-slate-900/70 hover:bg-cyan-950/40 transition-all flex flex-col items-center justify-center cursor-pointer group relative">
+            <div id="display-boosterRight" class="flex flex-col items-center text-center p-1">
+              <span class="text-xl">🚀</span>
+              <span class="text-[9px] font-hud text-cyan-300 font-bold">RIGHT BOOSTER</span>
+              <span class="text-[8px] text-slate-400">Add Thrust</span>
+            </div>
+            <button onclick="removePart(event, 'boosterRight')" id="btn-del-boosterRight" class="hidden absolute -top-2 -right-2 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-bold items-center justify-center shadow hover:bg-rose-500 z-20">✕</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Launch Pad Base -->
+      <div class="w-full bg-slate-800/90 border-t border-slate-700 p-2 rounded-xl flex items-center justify-between text-xs z-10 font-hud">
+        <span class="text-slate-400">STATUS:</span>
+        <span id="gantryStatusText" class="text-amber-400 font-bold">AWAITING ENGINE MOUNT</span>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: FLIGHT TELEMETRY, 4 DESTINATIONS & BIG RED BUTTON (4 Cols) -->
+    <section class="lg:col-span-4 flex flex-col justify-between bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 backdrop-blur-md shadow-2xl h-[580px] lg:h-[720px]">
+      
+      <!-- THRUST POWER DISPLAY -->
+      <div class="bg-gradient-to-br from-slate-950 to-slate-900 border-2 border-amber-500/40 rounded-2xl p-4 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-hud text-amber-400 font-bold flex items-center gap-1.5">
+            <span class="animate-ping inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+            TOTAL ENGINE THRUST
+          </span>
+          <span id="thrustTierTag" class="text-[10px] font-hud px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 font-bold">
+            STANDARD
+          </span>
+        </div>
+
+        <div class="flex items-baseline gap-2 mt-1">
+          <span id="thrustDisplay" class="text-3xl xl:text-4xl font-black font-hud text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-red-500">
+            0.0
+          </span>
+          <span class="text-sm md:text-base font-hud text-amber-400 font-extrabold tracking-wider">
+            MILLION LBS THRUST
+          </span>
+        </div>
+        <div class="text-[11px] text-slate-400 font-hud mt-0.5">
+          ≈ <span id="thrustNewtons" class="text-cyan-300 font-bold">0 MN</span> MegaNewtons of raw cosmic power
+        </div>
+
+        <!-- Top Speed Gauge Bar -->
+        <div class="mt-3 pt-2 border-t border-slate-800">
+          <div class="flex justify-between text-[11px] font-hud mb-1">
+            <span class="text-slate-400">ESTIMATED VELOCITY:</span>
+            <span id="speedDisplay" class="text-cyan-400 font-bold">0 km/h (Mach 0)</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5">
+            <div id="speedBar" class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTIMATED TRAVEL TIMES TO 4 DESTINATIONS -->
+      <div class="space-y-2 my-1 overflow-y-auto max-h-[250px] pr-1">
+        <h3 class="font-hud text-xs text-slate-300 font-bold flex items-center gap-1">
+          <span>🌌</span> 4 MISSION FLIGHT TRAJECTORIES
+        </h3>
+
+        <!-- 1. ISS (SPACE STATION) -->
+        <div class="bg-slate-950/70 border border-slate-800 hover:border-emerald-500/50 rounded-xl p-2 flex items-center justify-between transition">
+          <div class="flex items-center space-x-2">
+            <div class="text-xl">🛰️</div>
+            <div>
+              <div class="text-xs font-hud font-bold text-white">SPACE STATION (ISS)</div>
+              <div class="text-[9px] text-slate-400">420 km Orbit • Microgravity Lab</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="timeToISS" class="text-xs font-black font-hud text-emerald-400">--</div>
+            <div class="text-[8px] text-slate-400">Est. Flight</div>
+          </div>
+        </div>
+
+        <!-- 2. THE MOON -->
+        <div class="bg-slate-950/70 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-2 flex items-center justify-between transition">
+          <div class="flex items-center space-x-2">
+            <div class="text-xl">🌕</div>
+            <div>
+              <div class="text-xs font-hud font-bold text-white">THE MOON</div>
+              <div class="text-[9px] text-slate-400">384,400 km • Lunar Base Alpha</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="timeToMoon" class="text-xs font-black font-hud text-cyan-300">--</div>
+            <div class="text-[8px] text-slate-400">Est. Flight</div>
+          </div>
+        </div>
+
+        <!-- 3. MARS -->
+        <div class="bg-slate-950/70 border border-slate-800 hover:border-red-500/50 rounded-xl p-2 flex items-center justify-between transition">
+          <div class="flex items-center space-x-2">
+            <div class="text-xl">🔴</div>
+            <div>
+              <div class="text-xs font-hud font-bold text-white">MARS COLONY</div>
+              <div class="text-[9px] text-slate-400">225 Million km • Olympus Mons</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="timeToMars" class="text-xs font-black font-hud text-rose-400">--</div>
+            <div class="text-[8px] text-slate-400">Est. Flight</div>
+          </div>
+        </div>
+
+        <!-- 4. ASTEROID MINING BELT (PSYCHE 16) -->
+        <div class="bg-slate-950/70 border border-slate-800 hover:border-amber-500/50 rounded-xl p-2 flex items-center justify-between transition">
+          <div class="flex items-center space-x-2">
+            <div class="text-xl">☄️</div>
+            <div>
+              <div class="text-xs font-hud font-bold text-amber-300 flex items-center gap-1">
+                ASTEROID MINING
+              </div>
+              <div class="text-[9px] text-slate-400">Psyche 16 • $10Q Quad Minerals</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="timeToAsteroid" class="text-xs font-black font-hud text-amber-400">--</div>
+            <div class="text-[8px] text-slate-400">Est. Flight</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BIG RED LAUNCH BUTTON -->
+      <div class="pt-2 flex flex-col items-center">
+        <button id="launchButton" 
+                onclick="triggerLaunchSequence()" 
+                disabled
+                class="w-full py-4 sm:py-5 rounded-2xl font-black font-hud text-lg sm:text-xl tracking-widest text-white uppercase transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-500 hover:to-rose-600 active:scale-95 border-2 border-red-400 shadow-2xl flex items-center justify-center gap-3">
+          <span class="text-2xl sm:text-3xl">🔴</span>
+          <span id="launchBtnLabel">MOUNT ENGINE TO LAUNCH</span>
+          <span class="text-2xl sm:text-3xl">🚀</span>
+        </button>
+        <p id="launchHelperText" class="text-[11px] text-slate-400 mt-1 font-hud text-center">
+          Equip at least 1 Main Engine to enable ignition
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- LAUNCH & TWO-THUMB FLIGHT SIMULATOR FULLSCREEN OVERLAY MODAL -->
+  <div id="flightModal" class="fixed inset-0 z-50 bg-black/95 hidden flex-col justify-between p-2 sm:p-4 backdrop-blur-xl">
+    
+    <!-- 4-DESTINATION QUICK SELECTOR BAR AT TOP OF FLIGHT -->
+    <div class="max-w-6xl mx-auto w-full z-30">
+      <div class="bg-slate-900/90 border-2 border-cyan-500/50 p-2 rounded-2xl backdrop-blur-md shadow-2xl">
+        <div class="flex items-center justify-between mb-1.5 px-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+            <span class="font-hud text-xs font-bold text-cyan-300 tracking-wider">CHOOSE FLIGHT TARGET (TAP ANY DESTINATION):</span>
+          </div>
+          <button onclick="abortMission()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-2.5 py-1 rounded font-hud text-[10px] text-slate-300 transition">
+            ✕ EXIT / BAY
+          </button>
+        </div>
+
+        <!-- 4 DESTINATION CARDS -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 font-hud" id="flightDestSelector">
+          
+          <!-- DEST 1: ISS -->
+          <button onclick="switchFlightDestination('iss')" id="destBtn-iss" class="dest-btn py-2 px-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-950/80 text-left transition flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+            <span class="text-2xl">🛰️</span>
+            <div>
+              <div class="text-[11px] font-black text-emerald-300">1. ISS ORBIT</div>
+              <div class="text-[9px] text-slate-300">Space Lab Docking</div>
+            </div>
+          </button>
+
+          <!-- DEST 2: MOON -->
+          <button onclick="switchFlightDestination('moon')" id="destBtn-moon" class="dest-btn py-2 px-2.5 rounded-xl border border-slate-700 bg-slate-950/70 hover:border-cyan-400 text-left transition flex items-center gap-2">
+            <span class="text-2xl">🌕</span>
+            <div>
+              <div class="text-[11px] font-black text-cyan-300">2. THE MOON</div>
+              <div class="text-[9px] text-slate-400">Lunar Base Alpha</div>
+            </div>
+          </button>
+
+          <!-- DEST 3: MARS -->
+          <button onclick="switchFlightDestination('mars')" id="destBtn-mars" class="dest-btn py-2 px-2.5 rounded-xl border border-slate-700 bg-slate-950/70 hover:border-rose-400 text-left transition flex items-center gap-2">
+            <span class="text-2xl">🔴</span>
+            <div>
+              <div class="text-[11px] font-black text-rose-300">3. MARS COLONY</div>
+              <div class="text-[9px] text-slate-400">Red Planet Surface</div>
+            </div>
+          </button>
+
+          <!-- DEST 4: ASTEROID PSYCHE 16 -->
+          <button onclick="switchFlightDestination('asteroid')" id="destBtn-asteroid" class="dest-btn py-2 px-2.5 rounded-xl border border-slate-700 bg-slate-950/70 hover:border-amber-400 text-left transition flex items-center gap-2">
+            <span class="text-2xl">☄️</span>
+            <div>
+              <div class="text-[11px] font-black text-amber-300">4. ASTEROID MINING</div>
+              <div class="text-[9px] text-slate-400">Psyche 16 Gold Belt</div>
+            </div>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE FLIGHT CANVAS CONTAINER -->
+    <div class="max-w-6xl mx-auto w-full flex-grow relative my-2 bg-slate-950 border-2 border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center">
+      <canvas id="flightCanvas" class="w-full h-full block"></canvas>
+
+      <!-- Countdown Big Overlay Numbers -->
+      <div id="countdownOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30 transition-opacity duration-300">
+        <div id="countdownNumber" class="text-8xl sm:text-9xl font-black font-hud text-transparent bg-clip-text bg-gradient-to-br from-amber-300 to-red-500 animate-pulse">
+          3
+        </div>
+        <div class="text-base sm:text-lg font-hud text-cyan-400 mt-4 tracking-widest uppercase text-center px-4">
+          MAIN ENGINES IGNITING... PREPARE THUMB CONTROLS
+        </div>
+      </div>
+
+      <!-- Live Flight HUD Data Overlay -->
+      <div id="flightHudOverlay" class="absolute top-3 left-3 right-3 pointer-events-none flex justify-between z-20 text-xs font-hud">
+        <div class="bg-slate-900/80 border border-cyan-500/40 p-2 sm:p-3 rounded-xl backdrop-blur space-y-1 shadow">
+          <div class="text-slate-400 text-[10px] sm:text-xs">ACTIVE THRUST: <span id="hudThrust" class="text-amber-400 font-bold">0 M lbf</span></div>
+          <div class="text-slate-400 text-[10px] sm:text-xs">VELOCITY: <span id="hudSpeed" class="text-cyan-300 font-bold">0 km/h</span></div>
+          <div class="text-slate-400 text-[10px] sm:text-xs">DISTANCE TO TARGET: <span id="hudDistance" class="text-emerald-400 font-bold">0 km</span></div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-cyan-500/40 p-2 sm:p-3 rounded-xl backdrop-blur space-y-1 text-right shadow">
+          <div class="text-slate-400 text-[10px] sm:text-xs">CURRENT TARGET: <span id="hudDestination" class="text-emerald-300 font-bold">ISS SPACE STATION</span></div>
+          <div class="text-slate-400 text-[10px] sm:text-xs">ORE & DATA COLLECTED: <span id="hudOre" class="text-amber-300 font-bold">0 TONS</span></div>
+          <div class="text-slate-400 text-[10px] sm:text-xs">ALIGNMENT: <span id="hudAlignment" class="text-cyan-300 font-bold">LOCKED ON (100%)</span></div>
+        </div>
+      </div>
+
+      <!-- ON-SCREEN TWO-THUMB TOUCH CONTROLS (Floating in Canvas for Mobile/Tablet/Desktop) -->
+      <div class="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-end pointer-events-none">
+        
+        <!-- LEFT THUMB: STEER LEFT & BOOST -->
+        <div class="pointer-events-auto flex flex-col items-center gap-2">
+          <span class="text-[10px] font-hud text-cyan-300 font-bold bg-slate-900/90 px-2 py-0.5 rounded border border-cyan-500/30">
+            👈 LEFT THUMB
+          </span>
+          <div class="flex gap-2">
+            <button id="btnSteerLeft" 
+                    class="thumb-btn w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-cyan-600/80 hover:bg-cyan-500 border-2 border-cyan-300 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-2xl backdrop-blur active:bg-cyan-400">
+              ◀
+            </button>
+            <button id="btnThrustDown" 
+                    class="thumb-btn w-14 h-16 sm:w-16 sm:h-20 rounded-2xl bg-slate-800/80 hover:bg-slate-700 border border-cyan-500/50 text-cyan-300 font-hud text-xs flex flex-col items-center justify-center shadow-lg backdrop-blur">
+              <span>🔻</span>
+              <span class="text-[8px]">SLOW</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CENTER HINT -->
+        <div class="pointer-events-none hidden sm:block text-center bg-slate-900/70 border border-slate-800 px-3 py-1 rounded-xl backdrop-blur">
+          <div class="text-[10px] font-hud text-slate-300">STEER ROCKET TO HIT TARGET ORBS & PRECIOUS GEMS</div>
+          <div class="text-[8px] text-cyan-400">Desktop: Use [A] [D] or [Left] [Right] Arrow Keys</div>
+        </div>
+
+        <!-- RIGHT THUMB: BOOST & STEER RIGHT -->
+        <div class="pointer-events-auto flex flex-col items-center gap-2">
+          <span class="text-[10px] font-hud text-amber-300 font-bold bg-slate-900/90 px-2 py-0.5 rounded border border-amber-500/30">
+            RIGHT THUMB 👉
+          </span>
+          <div class="flex gap-2">
+            <button id="btnThrustUp" 
+                    class="thumb-btn w-14 h-16 sm:w-16 sm:h-20 rounded-2xl bg-amber-600/80 hover:bg-amber-500 border border-amber-400 text-white font-hud text-xs flex flex-col items-center justify-center shadow-lg backdrop-blur">
+              <span class="text-base">⚡</span>
+              <span class="text-[8px] font-black">BOOST</span>
+            </button>
+            <button id="btnSteerRight" 
+                    class="thumb-btn w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-cyan-600/80 hover:bg-cyan-500 border-2 border-cyan-300 text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-2xl backdrop-blur active:bg-cyan-400">
+              ▶
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Destination Arrival & Mining Victory Screen Modal -->
+      <div id="arrivalVictoryCard" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center z-40">
+        <div id="arrivalEmoji" class="text-6xl mb-3 animate-bounce">🛰️✨💎</div>
+        <h3 id="arrivalTitle" class="text-2xl md:text-3xl font-hud font-black text-amber-400 mb-2">MISSION ACCOMPLISHED!</h3>
+        <p id="arrivalDesc" class="text-sm max-w-md text-slate-300 mb-4 font-fun">
+          Your rocket navigated through deep space and successfully arrived at your destination!
+        </p>
+
+        <div class="grid grid-cols-3 gap-3 max-w-lg w-full mb-6 font-hud text-xs">
+          <div class="bg-slate-900 border border-cyan-500/40 p-3 rounded-xl">
+            <div class="text-slate-400">TOP VELOCITY</div>
+            <div id="recMaxSpeed" class="text-cyan-300 font-bold text-sm mt-1">145,000 km/h</div>
+          </div>
+          <div class="bg-slate-900 border border-emerald-500/40 p-3 rounded-xl">
+            <div class="text-slate-400">COLLECTED BOUNTY</div>
+            <div id="recBounty" class="text-emerald-400 font-bold text-sm mt-1">54,000 TONS</div>
+          </div>
+          <div class="bg-slate-900 border border-amber-500/40 p-3 rounded-xl">
+            <div class="text-slate-400">PILOT RATING</div>
+            <div id="recRating" class="text-amber-400 font-bold text-sm mt-1">⭐⭐⭐⭐⭐ MASTER</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-3">
+          <button onclick="switchFlightDestinationNext()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-hud font-bold text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+            🚀 FLY TO NEXT DESTINATION
+          </button>
+          <button onclick="replayFlight()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-hud text-xs sm:text-sm transition">
+            🔄 REPLAY
+          </button>
+          <button onclick="abortMission()" class="px-4 py-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700 text-rose-300 font-hud text-xs sm:text-sm transition">
+            🛠️ UPGRADE ENGINES
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950/80 border-t border-slate-900 px-4 py-2 text-center text-xs text-slate-500 font-hud">
+    ASTRO-FORGE LABS • INTERACTIVE TWO-THUMB ROCKET FLIGHT SIMULATOR • FOR JUNIOR ASTRONAUTS
+  </footer>
+
+  <!-- ================= JAVASCRIPT GAME LOGIC ================= -->
+  <script>
+    /* -------------------------------------------------------------
+       1. DATABASE OF ROCKET PARTS & 6 MAIN ENGINES
+    ------------------------------------------------------------- */
+    const ROCKET_PARTS = {
+      engines: [
+        {
+          id: 'eng_phoenix',
+          name: 'Phoenix-V Chemical Thruster',
+          type: 'engine',
+          thrustLbf: 5.2, // Millions of pounds
+          massTons: 80,
+          emoji: '🔥',
+          flameColor: '#f97316',
+          desc: 'High-thrust liquid methane cluster. Classic rumble power.',
+          tier: 'CHEMICAL'
+        },
+        {
+          id: 'eng_titan_super',
+          name: 'Titan Megalodon Quad',
+          type: 'engine',
+          thrustLbf: 12.8,
+          massTons: 150,
+          emoji: '🌋',
+          flameColor: '#ef4444',
+          desc: 'Heavy-lift rocket powerhouse with quadruple combustion chambers.',
+          tier: 'SUPER HEAVY'
+        },
+        {
+          id: 'eng_plasma_pulsar',
+          name: 'Pulsar-9 Ion Magneto-Plasma',
+          type: 'engine',
+          thrustLbf: 28.5,
+          massTons: 110,
+          emoji: '⚡',
+          flameColor: '#06b6d4',
+          desc: 'Superheated cyan plasma jet. Ultra-fast acceleration.',
+          tier: 'PLASMA ION'
+        },
+        {
+          id: 'eng_valkyrie_fusion',
+          name: 'Valkyrie Helium-3 Fusion Drive',
+          type: 'engine',
+          thrustLbf: 64.0,
+          massTons: 190,
+          emoji: '💠',
+          flameColor: '#8b5cf6',
+          desc: 'Thermonuclear fusion engine unleashing blinding purple exhaust.',
+          tier: 'FUSION'
+        },
+        {
+          id: 'eng_antimatter_singularity',
+          name: 'Chronos Antimatter Jet',
+          type: 'engine',
+          thrustLbf: 125.0,
+          massTons: 220,
+          emoji: '🌌',
+          flameColor: '#ec4899',
+          desc: 'Positron annihilation propulsion. Blazing interstellar flight.',
+          tier: 'ANTIMATTER'
+        },
+        {
+          id: 'eng_warp_tachyon',
+          name: 'Quantum Tachyon Warp Drive',
+          type: 'engine',
+          thrustLbf: 280.0, // 280 Million lbf!
+          massTons: 280,
+          emoji: '✨',
+          flameColor: '#38bdf8',
+          desc: 'Bends local spacetime. Reaches Asteroid belt in record time!',
+          tier: 'WARP DRIVE'
+        }
+      ],
+
+      boosters: [
+        {
+          id: 'bst_solid_falcon',
+          name: 'Solid Titan Strap-on Booster',
+          type: 'booster',
+          thrustLbf: 4.5,
+          massTons: 40,
+          emoji: '🚀',
+          desc: 'High initial lift-off acceleration booster rocket.'
+        },
+        {
+          id: 'bst_hyper_ion',
+          name: 'Hyper-Ion Vector Thruster',
+          type: 'booster',
+          thrustLbf: 14.0,
+          massTons: 35,
+          emoji: '🌀',
+          desc: 'Electric propulsion side pod with directional vector thrust.'
+        },
+        {
+          id: 'bst_antimatter_nacelle',
+          name: 'Dark Matter Warp Pod',
+          type: 'booster',
+          thrustLbf: 35.0,
+          massTons: 60,
+          emoji: '💫',
+          desc: 'Gravitational acceleration nacelle for extreme hypervelocity.'
+        }
+      ],
+
+      cores: [
+        {
+          id: 'core_methane',
+          name: 'Hydrolox Cryo-Tank Core',
+          type: 'core',
+          massTons: 100,
+          efficiency: 1.0,
+          emoji: '🧊',
+          desc: 'Cryogenic liquid hydrogen & oxygen pressurized core.'
+        },
+        {
+          id: 'core_plasma_tokamak',
+          name: 'Tokamak Fusion Core',
+          type: 'core',
+          massTons: 140,
+          efficiency: 1.4,
+          emoji: '⚛️',
+          desc: 'Magnetic confinement plasma torus multiplying engine output.'
+        },
+        {
+          id: 'core_singularity',
+          name: 'Micro-Singularity Power Cell',
+          type: 'core',
+          massTons: 200,
+          efficiency: 2.2,
+          emoji: '🔮',
+          desc: 'Miniature black hole generating limitless propulsion power.'
+        }
+      ],
+
+      cockpits: [
+        {
+          id: 'cap_explorer',
+          name: 'Astro-X Command Capsule',
+          type: 'cockpit',
+          massTons: 20,
+          emoji: '🛸',
+          desc: 'Triple-crew aerodynamic cockpit with AI guidance avionics.'
+        },
+        {
+          id: 'cap_deepspace',
+          name: 'Cyber-Horizon Quantum Bridge',
+          type: 'cockpit',
+          massTons: 30,
+          emoji: '🛰️',
+          desc: 'Interplanetary command bridge with holographic navigation.'
+        }
+      ],
+
+      modules: [
+        {
+          id: 'mod_mining_rig',
+          name: 'Laser Asteroid Mining Array',
+          type: 'module',
+          massTons: 45,
+          emoji: '💎',
+          desc: 'High-power mineral extraction beam and ore refinery pod.'
+        },
+        {
+          id: 'mod_science_lab',
+          name: 'Deep Space Biosphere Lab',
+          type: 'module',
+          massTons: 35,
+          emoji: '🧪',
+          desc: 'Zero-G hydroponics and orbital sample analysis unit.'
+        }
+      ]
+    };
+
+    /* -------------------------------------------------------------
+       2. DESTINATIONS DEFINITION (4 MAIN TARGETS)
+    ------------------------------------------------------------- */
+    const DESTINATIONS = {
+      iss: {
+        id: 'iss',
+        name: 'International Space Station (ISS)',
+        subtitle: 'Low Earth Orbit (420 km)',
+        distanceKm: 420,
+        emoji: '🛰️',
+        color: '#10b981',
+        desc: 'Dock with the orbital laboratory and swap research crew!'
+      },
+      moon: {
+        id: 'moon',
+        name: 'The Moon (Lunar Base)',
+        subtitle: '384,400 km • Crater Colony',
+        distanceKm: 384400,
+        emoji: '🌕',
+        color: '#38bdf8',
+        desc: 'Touchdown on the Moon and establish Lunar Base Alpha!'
+      },
+      mars: {
+        id: 'mars',
+        name: 'Mars (Olympus Mons)',
+        subtitle: '225 Million km • Red Planet',
+        distanceKm: 225000000,
+        emoji: '🔴',
+        color: '#ef4444',
+        desc: 'Enter Martian atmosphere and build the first bio-dome city!'
+      },
+      asteroid: {
+        id: 'asteroid',
+        name: 'Asteroid Psyche 16 Belt',
+        subtitle: '370 Million km • Rare Mineral Core',
+        distanceKm: 370000000,
+        emoji: '☄️',
+        color: '#f59e0b',
+        desc: 'Fire high-power mining lasers to extract billions in gold & platinum!'
+      }
+    };
+
+    let selectedDestination = 'iss';
+
+    /* -------------------------------------------------------------
+       3. CURRENT ROCKET BUILD STATE
+    ------------------------------------------------------------- */
+    let currentRocket = {
+      cockpit: null,
+      module: null,
+      core: null,
+      engine: null,
+      boosterLeft: null,
+      boosterRight: null
+    };
+
+    let activeCategory = 'engines';
+    let isAudioEnabled = true;
+
+    /* -------------------------------------------------------------
+       4. SYNTHESIZED SOUND EFFECTS (WEB AUDIO API)
+    ------------------------------------------------------------- */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function toggleAudio() {
+      isAudioEnabled = !isAudioEnabled;
+      document.getElementById('audioIcon').innerText = isAudioEnabled ? '🔊' : '🔇';
+      document.getElementById('audioText').innerText = isAudioEnabled ? 'SFX: ON' : 'SFX: OFF';
+      if (isAudioEnabled) playBeep(520, 0.08, 'sine');
+    }
+
+    function playBeep(freq = 440, duration = 0.1, type = 'sine') {
+      if (!isAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playSnapSound() {
+      if (!isAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } catch (e) {}
+    }
+
+    function playLaunchEngineRoar(durationSec = 4) {
+      if (!isAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const bufferSize = ctx.sampleRate * durationSec;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1; // white noise
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(150, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + durationSec * 0.8);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 1.5);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + durationSec);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start();
+      } catch (e) {}
+    }
+
+    function playCollectSound() {
+      if (!isAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+      } catch (e) {}
+    }
+
+    function playWarpWhoosh() {
+      if (!isAudioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.7);
+      } catch (e) {}
+    }
+
+    /* -------------------------------------------------------------
+       5. UI RENDERING: CATEGORIES & SHELF
+    ------------------------------------------------------------- */
+    function switchCategory(cat) {
+      activeCategory = cat;
+      playBeep(600, 0.05, 'sine');
+      
+      document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.className = 'category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-slate-800 text-slate-400 font-bold hover:text-cyan-300 transition';
+      });
+      const activeTab = document.getElementById(`tab-${cat}`);
+      if (activeTab) {
+        activeTab.className = 'category-tab py-1.5 px-1 text-center font-hud text-xs rounded-lg bg-cyan-600 text-white font-bold transition shadow-sm';
+      }
+
+      renderShelfParts();
+    }
+
+    function renderShelfParts() {
+      const shelf = document.getElementById('partsShelf');
+      shelf.innerHTML = '';
+      
+      let partsList = [];
+      if (activeCategory === 'engines') partsList = ROCKET_PARTS.engines;
+      else if (activeCategory === 'boosters') partsList = ROCKET_PARTS.boosters;
+      else if (activeCategory === 'cores') partsList = ROCKET_PARTS.cores;
+      else if (activeCategory === 'cockpits') partsList = [...ROCKET_PARTS.cockpits, ...ROCKET_PARTS.modules];
+
+      partsList.forEach(part => {
+        const card = document.createElement('div');
+        card.draggable = true;
+        card.className = 'bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-cyan-400 p-3 rounded-xl cursor-grab active:cursor-grabbing transition shadow flex items-center justify-between group';
+        
+        card.ondragstart = (e) => handleDragStart(e, part);
+        card.onclick = () => autoEquipPart(part);
+
+        let statBadge = '';
+        if (part.thrustLbf) {
+          statBadge = `<div class="text-xs font-hud font-black text-amber-400">🔥 ${part.thrustLbf}M lbf</div>`;
+        } else if (part.efficiency) {
+          statBadge = `<div class="text-xs font-hud font-bold text-cyan-300">⚡ ×${part.efficiency} Core</div>`;
+        } else {
+          statBadge = `<div class="text-xs font-hud text-emerald-400">🛰️ ${part.massTons} Tons</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-2xl group-hover:scale-110 transition border border-slate-700">
+              ${part.emoji}
+            </div>
+            <div>
+              <div class="font-hud text-xs font-bold text-slate-200 group-hover:text-cyan-300 flex items-center gap-1.5">
+                ${part.name}
+                ${part.tier ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/40">${part.tier}</span>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5 line-clamp-1 max-w-[190px]">${part.desc}</div>
+            </div>
+          </div>
+          <div class="text-right pl-2">
+            ${statBadge}
+            <span class="text-[9px] font-hud text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 opacity-80 group-hover:opacity-100">
+              + FIT
+            </span>
+          </div>
+        `;
+        shelf.appendChild(card);
+      });
+    }
+
+    /* -------------------------------------------------------------
+       6. DRAG & DROP + TAP-TO-EQUIP LOGIC
+    ------------------------------------------------------------- */
+    let draggedItem = null;
+
+    function handleDragStart(event, part) {
+      draggedItem = part;
+      event.dataTransfer.setData('text/plain', JSON.stringify(part));
+    }
+
+    function allowDrop(event) {
+      event.preventDefault();
+    }
+
+    function handleDrop(event, slotKey) {
+      event.preventDefault();
+      if (!draggedItem) {
+        try {
+          draggedItem = JSON.parse(event.dataTransfer.getData('text/plain'));
+        } catch (e) {}
+      }
+      if (draggedItem) {
+        assignPartToSlot(slotKey, draggedItem);
+        draggedItem = null;
+      }
+    }
+
+    function handleSlotClick(slotKey) {
+      if (slotKey === 'engine') switchCategory('engines');
+      else if (slotKey === 'boosterLeft' || slotKey === 'boosterRight') switchCategory('boosters');
+      else if (slotKey === 'core') switchCategory('cores');
+      else if (slotKey === 'cockpit' || slotKey === 'module') switchCategory('cockpits');
+    }
+
+    function autoEquipPart(part) {
+      if (part.type === 'engine') {
+        assignPartToSlot('engine', part);
+      } else if (part.type === 'booster') {
+        if (!currentRocket.boosterLeft) assignPartToSlot('boosterLeft', part);
+        else assignPartToSlot('boosterRight', part);
+      } else if (part.type === 'core') {
+        assignPartToSlot('core', part);
+      } else if (part.type === 'cockpit') {
+        assignPartToSlot('cockpit', part);
+      } else if (part.type === 'module') {
+        assignPartToSlot('module', part);
+      }
+    }
+
+    function assignPartToSlot(slotKey, part) {
+      currentRocket[slotKey] = part;
+      playSnapSound();
+      updateGantryUI();
+      calculatePhysics();
+    }
+
+    function removePart(event, slotKey) {
+      event.stopPropagation();
+      currentRocket[slotKey] = null;
+      playBeep(300, 0.08, 'sawtooth');
+      updateGantryUI();
+      calculatePhysics();
+    }
+
+    function resetRocket() {
+      currentRocket = {
+        cockpit: null,
+        module: null,
+        core: null,
+        engine: null,
+        boosterLeft: null,
+        boosterRight: null
+      };
+      playBeep(260, 0.1, 'sine');
+      updateGantryUI();
+      calculatePhysics();
+    }
+
+    function autoFillOptimalRocket() {
+      currentRocket.cockpit = ROCKET_PARTS.cockpits[0];
+      currentRocket.module = ROCKET_PARTS.modules[0];
+      currentRocket.core = ROCKET_PARTS.cores[1];
+      currentRocket.engine = ROCKET_PARTS.engines[3]; // Valkyrie Fusion
+      currentRocket.boosterLeft = ROCKET_PARTS.boosters[1];
+      currentRocket.boosterRight = ROCKET_PARTS.boosters[1];
+
+      playSnapSound();
+      updateGantryUI();
+      calculatePhysics();
+    }
+
+    /* -------------------------------------------------------------
+       7. GANTRY VISUALS
+    ------------------------------------------------------------- */
+    function updateGantryUI() {
+      const slots = ['cockpit', 'module', 'core', 'engine', 'boosterLeft', 'boosterRight'];
+
+      slots.forEach(slot => {
+        const item = currentRocket[slot];
+        const displayDiv = document.getElementById(`display-${slot}`);
+        const delBtn = document.getElementById(`btn-del-${slot}`);
+        const slotEl = document.getElementById(`slot-${slot}`);
+
+        if (item) {
+          delBtn.classList.remove('hidden');
+          delBtn.classList.add('flex');
+          slotEl.classList.remove('border-dashed');
+          slotEl.classList.add('border-solid', 'bg-cyan-950/60');
+
+          let statText = item.thrustLbf ? `${item.thrustLbf}M lbf` : (item.efficiency ? `Core x${item.efficiency}` : `${item.massTons}t`);
+          displayDiv.innerHTML = `
+            <span class="text-2xl animate-pulse">${item.emoji}</span>
+            <span class="text-[10px] font-hud text-cyan-200 font-black leading-tight max-w-[120px] truncate">${item.name}</span>
+            <span class="text-[9px] font-hud text-amber-400 font-bold">${statText}</span>
+          `;
+        } else {
+          delBtn.classList.add('hidden');
+          delBtn.classList.remove('flex');
+          slotEl.classList.add('border-dashed');
+          slotEl.classList.remove('border-solid', 'bg-cyan-950/60');
+          
+          if (slot === 'cockpit') {
+            displayDiv.innerHTML = `<span class="text-xl">🛰️</span><span class="text-[10px] font-hud text-cyan-300">SLOT 1: CAPSULE</span>`;
+          } else if (slot === 'module') {
+            displayDiv.innerHTML = `<span class="text-xl">💎</span><span class="text-[10px] font-hud text-cyan-300">SLOT 2: DRILL/PAYLOAD</span>`;
+          } else if (slot === 'core') {
+            displayDiv.innerHTML = `<span class="text-xl">⚡</span><span class="text-[10px] font-hud text-cyan-300">SLOT 3: REACTOR</span>`;
+          } else if (slot === 'engine') {
+            displayDiv.innerHTML = `<span class="text-2xl animate-bounce">🔥</span><span class="text-[10px] font-hud text-amber-400 font-bold">SLOT 5: MAIN ENGINE</span>`;
+          } else {
+            displayDiv.innerHTML = `<span class="text-lg">🚀</span><span class="text-[8px] font-hud text-cyan-300">BOOSTER</span>`;
+          }
+        }
+      });
+
+      const statusText = document.getElementById('gantryStatusText');
+      if (currentRocket.engine) {
+        statusText.innerText = `READY: ${currentRocket.engine.name.toUpperCase()}`;
+        statusText.className = 'text-emerald-400 font-bold';
+      } else {
+        statusText.innerText = 'AWAITING MAIN ENGINE MOUNT';
+        statusText.className = 'text-amber-400 font-bold';
+      }
+    }
+
+    /* -------------------------------------------------------------
+       8. PHYSICS & 4 TRAVEL TIME CALCULATIONS (ISS, Moon, Mars, Asteroid)
+    ------------------------------------------------------------- */
+    let totalThrustMillions = 0;
+    let totalMass = 50;
+    let topSpeedKmH = 0;
+
+    function calculatePhysics() {
+      let rawThrust = 0;
+      let mass = 60;
+      let multiplier = 1.0;
+
+      if (currentRocket.engine) {
+        rawThrust += currentRocket.engine.thrustLbf;
+        mass += currentRocket.engine.massTons;
+      }
+      if (currentRocket.boosterLeft) {
+        rawThrust += currentRocket.boosterLeft.thrustLbf;
+        mass += currentRocket.boosterLeft.massTons;
+      }
+      if (currentRocket.boosterRight) {
+        rawThrust += currentRocket.boosterRight.thrustLbf;
+        mass += currentRocket.boosterRight.massTons;
+      }
+
+      if (currentRocket.core) {
+        multiplier = currentRocket.core.efficiency;
+        mass += currentRocket.core.massTons;
+      }
+
+      if (currentRocket.cockpit) mass += currentRocket.cockpit.massTons;
+      if (currentRocket.module) mass += currentRocket.module.massTons;
+
+      totalThrustMillions = Number((rawThrust * multiplier).toFixed(1));
+      totalMass = mass;
+
+      const megaNewtons = (totalThrustMillions * 4.44822).toFixed(1);
+
+      document.getElementById('thrustDisplay').innerText = totalThrustMillions.toFixed(1);
+      document.getElementById('thrustNewtons').innerText = `${megaNewtons} MN`;
+
+      if (totalThrustMillions > 0) {
+        const twr = (totalThrustMillions * 1000) / totalMass;
+        topSpeedKmH = Math.round(twr * 3200 + totalThrustMillions * 2400);
+        const mach = Math.round(topSpeedKmH / 1234.8);
+        document.getElementById('speedDisplay').innerText = `${topSpeedKmH.toLocaleString()} km/h (Mach ${mach})`;
+        
+        const pct = Math.min(100, (topSpeedKmH / 650000) * 100);
+        document.getElementById('speedBar').style.width = `${pct}%`;
+
+        const tierTag = document.getElementById('thrustTierTag');
+        if (totalThrustMillions > 150) tierTag.innerText = 'WARP VELOCITY';
+        else if (totalThrustMillions > 60) tierTag.innerText = 'FUSION CRUISE';
+        else if (totalThrustMillions > 25) tierTag.innerText = 'PLASMA HEAVY';
+        else tierTag.innerText = 'STANDARD ORBITAL';
+
+      } else {
+        topSpeedKmH = 0;
+        document.getElementById('speedDisplay').innerText = '0 km/h (Mach 0)';
+        document.getElementById('speedBar').style.width = '0%';
+        document.getElementById('thrustTierTag').innerText = 'OFFLINE';
+      }
+
+      calculateTravelTimes(topSpeedKmH);
+
+      const launchBtn = document.getElementById('launchButton');
+      const launchBtnLabel = document.getElementById('launchBtnLabel');
+      const launchHelper = document.getElementById('launchHelperText');
+
+      if (totalThrustMillions > 0) {
+        launchBtn.disabled = false;
+        launchBtn.classList.add('red-button-active');
+        launchBtnLabel.innerText = 'IGNITE & LAUNCH';
+        launchHelper.innerHTML = `<span class="text-emerald-400 font-bold">READY TO BLAST OFF!</span> (${totalThrustMillions} Million lbs thrust)`;
+      } else {
+        launchBtn.disabled = true;
+        launchBtn.classList.remove('red-button-active');
+        launchBtnLabel.innerText = 'MOUNT ENGINE TO LAUNCH';
+        launchHelper.innerHTML = 'Equip at least 1 Main Engine to enable ignition';
+      }
+    }
+
+    function calculateTravelTimes(speedKmH) {
+      const issEl = document.getElementById('timeToISS');
+      const moonEl = document.getElementById('timeToMoon');
+      const marsEl = document.getElementById('timeToMars');
+      const asteroidEl = document.getElementById('timeToAsteroid');
+
+      if (speedKmH <= 0) {
+        issEl.innerText = '--';
+        moonEl.innerText = '--';
+        marsEl.innerText = '--';
+        asteroidEl.innerText = '--';
+        return;
+      }
+
+      // 1. ISS (420 km)
+      const secISS = (DESTINATIONS.iss.distanceKm / (speedKmH * 0.4)) * 3600;
+      if (secISS < 60) {
+        issEl.innerText = `${Math.max(12, Math.round(secISS))} Seconds`;
+      } else {
+        issEl.innerText = `${(secISS / 60).toFixed(1)} Mins`;
+      }
+
+      // 2. Moon (384,400 km)
+      const hoursMoon = DESTINATIONS.moon.distanceKm / (speedKmH * 0.85);
+      if (hoursMoon < 1) {
+        const mins = Math.max(8, Math.round(hoursMoon * 60));
+        moonEl.innerText = `${mins} Minutes`;
+      } else if (hoursMoon < 48) {
+        moonEl.innerText = `${hoursMoon.toFixed(1)} Hours`;
+      } else {
+        moonEl.innerText = `${(hoursMoon / 24).toFixed(1)} Days`;
+      }
+
+      // 3. Mars (225M km)
+      const hoursMars = DESTINATIONS.mars.distanceKm / speedKmH;
+      const daysMars = hoursMars / 24;
+      if (daysMars < 1) {
+        marsEl.innerText = `${hoursMars.toFixed(1)} Hours`;
+      } else if (daysMars < 30) {
+        marsEl.innerText = `${daysMars.toFixed(1)} Days`;
+      } else {
+        marsEl.innerText = `${(daysMars / 30.4).toFixed(1)} Months`;
+      }
+
+      // 4. Asteroid Belt (370M km)
+      const hoursAsteroid = DESTINATIONS.asteroid.distanceKm / speedKmH;
+      const daysAsteroid = hoursAsteroid / 24;
+      if (daysAsteroid < 2) {
+        asteroidEl.innerText = `${hoursAsteroid.toFixed(1)} Hours`;
+      } else if (daysAsteroid < 60) {
+        asteroidEl.innerText = `${daysAsteroid.toFixed(1)} Days`;
+      } else {
+        asteroidEl.innerText = `${(daysAsteroid / 30.4).toFixed(1)} Months`;
+      }
+    }
+
+    /* -------------------------------------------------------------
+       9. TWO-THUMB FLIGHT CONTROLS & DESTINATION SELECTION
+    ------------------------------------------------------------- */
+    let steeringInput = {
+      left: false,
+      right: false,
+      boost: false,
+      brake: false
+    };
+
+    function setupThumbControls() {
+      const btnLeft = document.getElementById('btnSteerLeft');
+      const btnRight = document.getElementById('btnSteerRight');
+      const btnBoost = document.getElementById('btnThrustUp');
+      const btnBrake = document.getElementById('btnThrustDown');
+
+      const bindButton = (el, actionKey) => {
+        const start = (e) => {
+          e.preventDefault();
+          steeringInput[actionKey] = true;
+          playBeep(actionKey === 'left' ? 400 : (actionKey === 'right' ? 500 : 700), 0.04, 'triangle');
+        };
+        const end = (e) => {
+          e.preventDefault();
+          steeringInput[actionKey] = false;
+        };
+        el.addEventListener('pointerdown', start);
+        el.addEventListener('pointerup', end);
+        el.addEventListener('pointercancel', end);
+        el.addEventListener('pointerleave', end);
+      };
+
+      bindButton(btnLeft, 'left');
+      bindButton(btnRight, 'right');
+      bindButton(btnBoost, 'boost');
+      bindButton(btnBrake, 'brake');
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') steeringInput.left = true;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') steeringInput.right = true;
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') steeringInput.boost = true;
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') steeringInput.brake = true;
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') steeringInput.left = false;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') steeringInput.right = false;
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') steeringInput.boost = false;
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') steeringInput.brake = false;
+      });
+    }
+
+    function switchFlightDestination(destKey) {
+      selectedDestination = destKey;
+      playBeep(650, 0.08, 'sine');
+
+      // Update 4 Destination Buttons UI
+      ['iss', 'moon', 'mars', 'asteroid'].forEach(k => {
+        const btn = document.getElementById(`destBtn-${k}`);
+        if (k === destKey) {
+          btn.className = 'dest-btn py-2 px-2.5 rounded-xl border-2 border-cyan-400 bg-cyan-950 text-left transition flex items-center gap-2 shadow-lg shadow-cyan-500/30 ring-2 ring-cyan-400/50 scale-102';
+        } else {
+          btn.className = 'dest-btn py-2 px-2.5 rounded-xl border border-slate-700 bg-slate-950/70 hover:border-cyan-400 text-left transition flex items-center gap-2 opacity-80';
+        }
+      });
+
+      const dest = DESTINATIONS[destKey];
+      document.getElementById('hudDestination').innerText = dest.name.toUpperCase();
+      document.getElementById('hudDestination').style.color = dest.color;
+
+      // Reset progress to fly to newly selected body
+      flightState.progress = 0;
+      flightState.arrivalDistanceKm = dest.distanceKm;
+      flightState.targetOrbX = (canvas.width || 600) * (0.3 + Math.random() * 0.4);
+
+      // Hide victory modal if open
+      document.getElementById('arrivalVictoryCard').classList.add('hidden');
+      document.getElementById('arrivalVictoryCard').classList.remove('flex');
+    }
+
+    function switchFlightDestinationNext() {
+      const sequence = ['iss', 'moon', 'mars', 'asteroid'];
+      const currentIdx = sequence.indexOf(selectedDestination);
+      const nextKey = sequence[(currentIdx + 1) % sequence.length];
+      switchFlightDestination(nextKey);
+      flightState.active = true;
+      startFlightSimulationLoop();
+    }
+
+    /* -------------------------------------------------------------
+       10. FULLSCREEN SIMULATION ENGINE & TWO-THUMB ROCKET PHYS
+    ------------------------------------------------------------- */
+    let animationFrameId = null;
+    let flightState = {
+      active: false,
+      progress: 0,
+      rocketX: 0, // dynamic steerable horizontal position
+      rocketTilt: 0,
+      currentSpeed: 0,
+      targetSpeed: 0,
+      distanceTraveled: 0,
+      arrivalDistanceKm: 420,
+      minedOre: 0,
+      targetOrbX: 0,
+      stars: [],
+      particles: [],
+      flameParticles: [],
+      floatingItems: [] // collectibles (space gems / fuel orbs)
+    };
+
+    const canvas = document.getElementById('flightCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      if (canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        if (!flightState.rocketX) flightState.rocketX = canvas.width / 2;
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function triggerLaunchSequence() {
+      if (totalThrustMillions <= 0) return;
+
+      const modal = document.getElementById('flightModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      resizeCanvas();
+
+      flightState.active = true;
+      flightState.progress = 0;
+      flightState.rocketX = canvas.width / 2;
+      flightState.rocketTilt = 0;
+      flightState.currentSpeed = 0;
+      flightState.targetSpeed = topSpeedKmH;
+      flightState.distanceTraveled = 0;
+      flightState.arrivalDistanceKm = DESTINATIONS[selectedDestination].distanceKm;
+      flightState.minedOre = 0;
+      flightState.targetOrbX = canvas.width * 0.5;
+      flightState.particles = [];
+      flightState.flameParticles = [];
+      flightState.floatingItems = [];
+
+      // Init Starfield
+      flightState.stars = [];
+      for (let i = 0; i < 160; i++) {
+        flightState.stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2.5 + 0.5,
+          speed: Math.random() * 3 + 1,
+          color: Math.random() > 0.3 ? '#ffffff' : (Math.random() > 0.5 ? '#38bdf8' : '#f472b6')
+        });
+      }
+
+      // Populate random orbital bonus orbs to steer toward
+      for (let i = 0; i < 12; i++) {
+        spawnCollectibleItem();
+      }
+
+      switchFlightDestination(selectedDestination);
+      document.getElementById('countdownOverlay').classList.remove('hidden');
+      document.getElementById('hudThrust').innerText = `${totalThrustMillions} M lbf`;
+
+      runCountdown(3);
+    }
+
+    function spawnCollectibleItem() {
+      flightState.floatingItems.push({
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: -Math.random() * 800 - 100,
+        radius: 18,
+        emoji: Math.random() > 0.5 ? '💎' : (Math.random() > 0.5 ? '⚡' : '✨'),
+        collected: false
+      });
+    }
+
+    function runCountdown(count) {
+      const numEl = document.getElementById('countdownNumber');
+      if (count > 0) {
+        numEl.innerText = count;
+        playBeep(330 + count * 110, 0.25, 'triangle');
+        setTimeout(() => runCountdown(count - 1), 900);
+      } else {
+        numEl.innerText = 'BLASTOFF!';
+        playLaunchEngineRoar(5);
+        document.body.classList.add('shake-active');
+        setTimeout(() => {
+          document.getElementById('countdownOverlay').classList.add('hidden');
+          document.body.classList.remove('shake-active');
+          startFlightSimulationLoop();
+        }, 800);
+      }
+    }
+
+    function startFlightSimulationLoop() {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      let lastTime = performance.now();
+
+      function loop(currentTime) {
+        const dt = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+
+        updateFlightPhysics(dt);
+        renderFlightFrame();
+
+        if (flightState.active) {
+          animationFrameId = requestAnimationFrame(loop);
+        }
+      }
+      animationFrameId = requestAnimationFrame(loop);
+    }
+
+    function updateFlightPhysics(dt) {
+      // 1. Two-Thumb Steerable Horizontal Physics
+      const steerSpeed = 380 * dt;
+      if (steeringInput.left) {
+        flightState.rocketX -= steerSpeed;
+        flightState.rocketTilt = Math.max(-0.25, flightState.rocketTilt - 0.04);
+      } else if (steeringInput.right) {
+        flightState.rocketX += steerSpeed;
+        flightState.rocketTilt = Math.min(0.25, flightState.rocketTilt + 0.04);
+      } else {
+        // Return to center vertical angle
+        flightState.rocketTilt *= 0.85;
+      }
+
+      // Constrain inside screen bounds
+      flightState.rocketX = Math.max(50, Math.min(canvas.width - 50, flightState.rocketX));
+
+      // 2. Boost / Brake throttle
+      let speedMult = 1.0;
+      if (steeringInput.boost) speedMult = 1.45;
+      if (steeringInput.brake) speedMult = 0.65;
+
+      const targetV = flightState.targetSpeed * speedMult;
+      flightState.currentSpeed += (targetV - flightState.currentSpeed) * 0.06;
+
+      // Progress timeline
+      flightState.progress += dt * 6.5; // ~15 second approach
+
+      // Traveled Distance Calculation
+      flightState.distanceTraveled += (flightState.currentSpeed / 3600) * dt * 5000;
+      const remainingDist = Math.max(0, flightState.arrivalDistanceKm - flightState.distanceTraveled);
+
+      // HUD updates
+      document.getElementById('hudSpeed').innerText = `${Math.round(flightState.currentSpeed).toLocaleString()} km/h`;
+      document.getElementById('hudDistance').innerText = `${Math.round(remainingDist).toLocaleString()} km`;
+
+      // Steering Alignment percentage
+      const alignment = Math.max(20, Math.round(100 - Math.abs(flightState.rocketX - flightState.targetOrbX) / 4));
+      document.getElementById('hudAlignment').innerText = `${alignment}% ${alignment > 80 ? 'LOCKED ON' : 'ALIGNING'}`;
+      document.getElementById('hudAlignment').className = alignment > 80 ? 'text-emerald-300 font-bold' : 'text-amber-400 font-bold';
+
+      // 3. Update & Collect Falling Space Gems
+      flightState.floatingItems.forEach(item => {
+        item.y += (flightState.currentSpeed / 15000 + 4) * 60 * dt;
+        
+        // Check collision with rocket
+        const rocketY = canvas.height * 0.68;
+        const dist = Math.hypot(item.x - flightState.rocketX, item.y - rocketY);
+        if (dist < 42 && !item.collected) {
+          item.collected = true;
+          flightState.minedOre += 1500;
+          playCollectSound();
+          document.getElementById('hudOre').innerText = `${flightState.minedOre.toLocaleString()} TONS`;
+        }
+
+        // Recycle off screen
+        if (item.y > canvas.height + 50) {
+          item.y = -Math.random() * 400 - 50;
+          item.x = Math.random() * (canvas.width - 100) + 50;
+          item.collected = false;
+        }
+      });
+
+      // Target Destination Arrived (100%)
+      if (flightState.progress >= 100 && !document.getElementById('arrivalVictoryCard').classList.contains('flex')) {
+        showArrivalScreen();
+      }
+    }
+
+    function renderFlightFrame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 1. Dynamic Space Backdrop
+      let grad = ctx.createLinearGradient(0, 0, 0, h);
+      if (selectedDestination === 'iss') {
+        // Bright blue Earth limb horizon
+        grad.addColorStop(0, '#020617');
+        grad.addColorStop(0.65, '#0c4a6e');
+        grad.addColorStop(1, '#0284c7');
+      } else if (selectedDestination === 'moon') {
+        // Deep obsidian space
+        grad.addColorStop(0, '#030712');
+        grad.addColorStop(1, '#0f172a');
+      } else if (selectedDestination === 'mars') {
+        // Mars red planetary glow
+        grad.addColorStop(0, '#090514');
+        grad.addColorStop(1, '#3b0d0c');
+      } else {
+        // Golden asteroid nebula
+        grad.addColorStop(0, '#090a15');
+        grad.addColorStop(1, '#331c03');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // 2. Starfield Streaks (Responsive to Speed)
+      const starSpeedMult = Math.min(26, 1 + flightState.currentSpeed / 22000);
+      ctx.lineWidth = 1.5;
+      flightState.stars.forEach(star => {
+        star.y += star.speed * starSpeedMult;
+        if (star.y > h) {
+          star.y = 0;
+          star.x = Math.random() * w;
+        }
+
+        ctx.strokeStyle = star.color;
+        ctx.beginPath();
+        ctx.moveTo(star.x, star.y);
+        ctx.lineTo(star.x, star.y + star.speed * starSpeedMult * 1.6);
+        ctx.stroke();
+      });
+
+      // 3. Render Collectible Gems / Energy Orbs
+      flightState.floatingItems.forEach(item => {
+        if (!item.collected) {
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.emoji, item.x, item.y);
+          
+          // Glow halo
+          ctx.beginPath();
+          ctx.arc(item.x, item.y - 8, item.radius, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+          ctx.fill();
+        }
+      });
+
+      // 4. Render Active Destination Object (ISS, Moon, Mars, or Asteroid)
+      drawDestinationTarget(w, h);
+
+      // 5. Draw Steerable Rocket
+      drawSteerableRocket(flightState.rocketX, h * 0.68, flightState.rocketTilt);
+    }
+
+    function drawDestinationTarget(w, h) {
+      // Approach animation (Gets larger as progress reaches 100)
+      const approachScale = Math.min(1.0, 0.3 + (flightState.progress / 100) * 0.7);
+      const targetY = h * 0.22;
+      const targetX = flightState.targetOrbX;
+
+      ctx.save();
+      ctx.translate(targetX, targetY);
+      ctx.scale(approachScale, approachScale);
+
+      if (selectedDestination === 'iss') {
+        // === INTERNATIONAL SPACE STATION (ISS) GRAPHIC ===
+        // Station Central Truss
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(-80, -6, 160, 12);
+        
+        // Solar Array Panels (Blue Photovoltaic wings)
+        ctx.fillStyle = '#0284c7';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        
+        // Left Panels
+        ctx.fillRect(-110, -35, 25, 70);
+        ctx.strokeRect(-110, -35, 25, 70);
+        ctx.fillRect(-80, -35, 25, 70);
+        ctx.strokeRect(-80, -35, 25, 70);
+
+        // Right Panels
+        ctx.fillRect(55, -35, 25, 70);
+        ctx.strokeRect(55, -35, 25, 70);
+        ctx.fillRect(85, -35, 25, 70);
+        ctx.strokeRect(85, -35, 25, 70);
+
+        // Pressurized Modules / Cupola / Docking Port
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(-22, -18, 44, 36);
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+
+        // Docking Guidance Laser Beacon
+        ctx.strokeStyle = '#34d399';
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(0, 20);
+        ctx.lineTo(0, 120);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+      } else if (selectedDestination === 'moon') {
+        // === THE MOON ===
+        ctx.beginPath();
+        ctx.arc(0, 0, 60, 0, Math.PI * 2);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.shadowColor = '#e2e8f0';
+        ctx.shadowBlur = 30;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Moon Craters
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(-20, -15, 12, 0, Math.PI * 2);
+        ctx.arc(15, 20, 16, 0, Math.PI * 2);
+        ctx.arc(20, -22, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else if (selectedDestination === 'mars') {
+        // === MARS ===
+        ctx.beginPath();
+        ctx.arc(0, 0, 75, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.shadowColor = '#f87171';
+        ctx.shadowBlur = 35;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Polar Ice Cap
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, -68, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Surface canyons
+        ctx.fillStyle = '#991b1b';
+        ctx.beginPath();
+        ctx.arc(-10, 10, 25, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else {
+        // === ASTEROID MINING PSYCHE 16 ===
+        ctx.fillStyle = '#f59e0b';
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, 60, 0, Math.PI * 2);
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 30;
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Mining Laser Drill Beam connecting from rocket
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(flightState.rocketX - targetX, (h * 0.68) - targetY);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.restore();
+    }
+
+    function drawSteerableRocket(x, y, tiltAngle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(tiltAngle);
+
+      // Raw thrust vibration
+      const vib = (Math.random() - 0.5) * Math.min(6, totalThrustMillions * 0.08);
+      ctx.translate(vib, vib);
+
+      // Rocket Engine Exhaust Particles
+      const flameColor = currentRocket.engine ? currentRocket.engine.flameColor : '#f97316';
+      for (let i = 0; i < 4; i++) {
+        flightState.flameParticles.push({
+          x: (Math.random() - 0.5) * 18,
+          y: 60,
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 8 + 12,
+          radius: Math.random() * 8 + 5,
+          color: flameColor,
+          alpha: 1
+        });
+      }
+
+      // Draw flame particles
+      for (let i = flightState.flameParticles.length - 1; i >= 0; i--) {
+        const p = flightState.flameParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.04;
+        p.radius *= 0.96;
+
+        if (p.alpha <= 0) {
+          flightState.flameParticles.splice(i, 1);
+          continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.globalAlpha = 1;
+
+      // Rocket Body
+      ctx.fillStyle = '#e2e8f0';
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2.5;
+
+      // Nosecone
+      ctx.beginPath();
+      ctx.moveTo(0, -60);
+      ctx.lineTo(16, -20);
+      ctx.lineTo(-16, -20);
+      ctx.closePath();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fill();
+      ctx.stroke();
+
+      // Main Body
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-18, -20, 36, 60);
+      ctx.strokeRect(-18, -20, 36, 60);
+
+      // Capsule Window
+      ctx.beginPath();
+      ctx.arc(0, -10, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fill();
+
+      // Core Reactor Glow
+      if (currentRocket.core) {
+        ctx.fillStyle = currentRocket.core.efficiency > 1.5 ? '#ec4899' : '#06b6d4';
+        ctx.fillRect(-12, 10, 24, 15);
+      }
+
+      // Boosters (Left & Right)
+      if (currentRocket.boosterLeft) {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(-32, 0, 12, 50);
+        ctx.strokeRect(-32, 0, 12, 50);
+      }
+      if (currentRocket.boosterRight) {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(20, 0, 12, 50);
+        ctx.strokeRect(20, 0, 12, 50);
+      }
+
+      // Engine Bells
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.moveTo(-12, 40);
+      ctx.lineTo(12, 40);
+      ctx.lineTo(18, 62);
+      ctx.lineTo(-18, 62);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function showArrivalScreen() {
+      flightState.active = false;
+      playWarpWhoosh();
+      playBeep(880, 0.4, 'sine');
+
+      const card = document.getElementById('arrivalVictoryCard');
+      card.classList.remove('hidden');
+      card.classList.add('flex');
+
+      const dest = DESTINATIONS[selectedDestination];
+      document.getElementById('arrivalEmoji').innerText = `${dest.emoji} 🚀 ✨`;
+      document.getElementById('arrivalTitle').innerText = `${dest.name.toUpperCase()} ARRIVAL!`;
+      document.getElementById('arrivalDesc').innerText = dest.desc;
+
+      document.getElementById('recMaxSpeed').innerText = `${Math.round(flightState.currentSpeed).toLocaleString()} km/h`;
+      document.getElementById('recBounty').innerText = `${(flightState.minedOre + 12000).toLocaleString()} TONS`;
+    }
+
+    function replayFlight() {
+      triggerLaunchSequence();
+    }
+
+    function abortMission() {
+      flightState.active = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      document.getElementById('flightModal').classList.add('hidden');
+      document.getElementById('flightModal').classList.remove('flex');
+      document.body.classList.remove('shake-active');
+    }
+
+    /* -------------------------------------------------------------
+       11. INITIALIZATION ON LOAD
+    ------------------------------------------------------------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      switchCategory('engines');
+      updateGantryUI();
+      calculatePhysics();
+      setupThumbControls();
+    });
+  </script>
+</body>
+</html>
